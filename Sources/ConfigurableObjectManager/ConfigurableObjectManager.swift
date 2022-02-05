@@ -58,7 +58,7 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
     /// Defines in which order a new configuration will be applied
     public var updateOrder: UpdateOrder = .removeAddUpdate
     
-    init() {
+    public init() {
         updateItem = { item, configuration -> Item? in
             
             if let object = item?.object as? Activatable {
@@ -80,7 +80,7 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
         }
     }
     
-    init() where Managed : Reconfigurable{
+    public init() where Managed : Reconfigurable{
         updateItem = { item, configuration -> Item? in
             
             guard let configuration = configuration else {
