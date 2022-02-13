@@ -97,4 +97,22 @@ final class ConfigurableObjectManagerTests: XCTestCase {
         manager.update(configurations: [])
         XCTAssertFalse(object.activated, "Object must be deactivated")
     }
+    
+    func testNoReconfigurationForEqualConfiguration() throws {
+        let manager = ConfigurableObjectManager<MockObject>()
+        let id = 10
+        manager.update(configurations: [
+            MockConfiguration(id: id)
+        ])
+        
+        let object = manager.object(for: id)
+        object?.id = 11
+        
+        manager.update(configurations: [
+            MockConfiguration(id: id)
+        ])
+        
+        XCTAssertNotNil(object, "Object must exist")
+        XCTAssertEqual(object?.id, 11, "Object ID must not be reset to exisiting configuration")
+    }
 }

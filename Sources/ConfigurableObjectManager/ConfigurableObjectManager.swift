@@ -35,7 +35,7 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
     private var managedItems : [Configuration.ID: Item] = [:]
     private var lock = os_unfair_lock_s()
     
-    private var updateItem : (_ item: Item?, _ configuration: Configuration?) -> Item?
+    private var updateItem0 : (_ item: Item?, _ configuration: Configuration?) -> Item?
     
     
     public enum UpdateOrder {
@@ -59,7 +59,7 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
     public var updateOrder: UpdateOrder = .removeAddUpdate
     
     public init() {
-        updateItem = { item, configuration -> Item? in
+        updateItem0 = { item, configuration -> Item? in
             
             if let object = item?.object as? Activatable {
                 object.deactivate()
@@ -81,7 +81,7 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
     }
     
     public init() where Managed : Reconfigurable{
-        updateItem = { item, configuration -> Item? in
+        updateItem0 = { item, configuration -> Item? in
             
             guard let configuration = configuration else {
                 if let object = item?.object as? Activatable {
@@ -112,13 +112,18 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
         }
     }
     
+    private func update(item: Item?, with configuration: Configuration?) -> Item? {
+        guard item?.configuration != configuration else { return item }
+        return updateItem0(item, configuration)
+    }
+    
     /// Update the configuration of a single object. If the object does not exist, it will be instantiated
     /// - Parameter configuration: The configuration to apply
     public func update(configuration: Configuration) {
         os_unfair_lock_lock(&lock)
         defer { os_unfair_lock_unlock(&lock) }
         
-        managedItems[configuration.id] = updateItem(managedItems[configuration.id], configuration)
+        managedItems[configuration.id] = update(item: managedItems[configuration.id], with:configuration)
     }
     
     /// Update the configuration of all objects. If an object does not exist, it will be instantiated, if its not
@@ -142,19 +147,19 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
         
         func update() {
             for id in toBeUpdated {
-                managedItems[id] = updateItem(managedItems[id], configurations[id])
+                managedItems[id] = self.update(item: managedItems[id], with:configurations[id])
             }
         }
         
         func remove() {
             for id in toBeRemoved {
-                managedItems[id] = updateItem(managedItems[id], nil)
+                managedItems[id] = self.update(item:managedItems[id], with:nil)
             }
         }
         
         func add() {
             for id in toBeAdded {
-                managedItems[id] = updateItem(managedItems[id], configurations[id])
+                managedItems[id] = self.update(item: managedItems[id], with:configurations[id])
             }
         }
         
