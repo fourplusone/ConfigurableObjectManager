@@ -191,6 +191,12 @@ public class ConfigurableObjectManager<Managed> where Managed : Configurable {
         }
     }
     
+    public var allObjects : [Configuration.ID: Managed] {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        return managedItems.mapValues { $0.object }
+    }
+    
     public func object(for id: Configuration.ID) -> Managed? {
         os_unfair_lock_lock(&lock)
         defer { os_unfair_lock_unlock(&lock) }
